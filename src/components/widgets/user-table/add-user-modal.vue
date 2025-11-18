@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { Roles } from "@/constants/role/role.constants";
+import {
+  Roles,
+  type Role,
+  type RoleValue,
+} from "@/constants/role/role.constants";
 import type { NewUserForm, NewUserErrors } from "@/types/user";
-import type { UserRole } from "@/types/user";
 
 interface Props {
   show: boolean;
@@ -15,13 +18,20 @@ defineProps<Props>();
 
 const emits = defineEmits<{
   (e: "close"): void;
-  (e: "update:newUser", field: keyof NewUserForm, value: string | boolean | UserRole): void;
+  (
+    e: "update:newUser",
+    field: keyof NewUserForm,
+    value: string | boolean | RoleValue
+  ): void;
   (e: "validateName"): void;
   (e: "validateEmail"): void;
   (e: "submit"): void;
 }>();
 
-function handleInput(field: keyof NewUserForm, value: string | boolean | UserRole) {
+function handleInput(
+  field: keyof NewUserForm,
+  value: string | boolean | RoleValue
+) {
   emits("update:newUser", field, value);
 }
 </script>
@@ -71,9 +81,13 @@ function handleInput(field: keyof NewUserForm, value: string | boolean | UserRol
           <label>Роль*</label>
           <select
             :value="newUser.role"
-            @change="(e) => handleInput('role', (e.target as HTMLSelectElement).value as UserRole)"
+            @change="(e) => handleInput('role', (e.target as HTMLSelectElement).value as RoleValue)"
           >
-            <option v-for="option in Roles" :key="option.value" :value="option.value">
+            <option
+              v-for="option in Roles"
+              :key="option.value"
+              :value="option.value"
+            >
               {{ option.title }}
             </option>
           </select>
@@ -92,8 +106,14 @@ function handleInput(field: keyof NewUserForm, value: string | boolean | UserRol
       </div>
 
       <div class="modal-footer">
-        <button @click="emits('close')" class="btn btn-secondary">Отмена</button>
-        <button @click="emits('submit')" class="btn btn-primary" :disabled="!isValid || isSaving">
+        <button @click="emits('close')" class="btn btn-secondary">
+          Отмена
+        </button>
+        <button
+          @click="emits('submit')"
+          class="btn btn-primary"
+          :disabled="!isValid || isSaving"
+        >
           {{ isSaving ? "Сохранение..." : "Добавить" }}
         </button>
       </div>

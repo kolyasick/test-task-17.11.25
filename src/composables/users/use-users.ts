@@ -4,8 +4,8 @@ import { generateMockUsers } from "@/utils/generate-mock-users";
 
 export function useUsers() {
   const users = ref<User[]>([]);
-  const isLoading = ref(false);
-  const isSaving = ref(false);
+  const isLoading = ref<boolean>(false);
+  const isSaving = ref<boolean>(false);
   const error = ref<string | null>(null);
 
   async function loadUsers() {

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { User, EditUserForm } from "@/types/user";
-import type { UserRole } from "@/types/user";
 import { useUtils } from "@/composables/utils/use-utils";
+import { Roles, type RoleValue } from "@/constants/role/role.constants";
 
 interface Props {
   user: User;
@@ -19,22 +19,29 @@ const emits = defineEmits<{
   (e: "openDetails", user: User): void;
   (e: "deleteUser", userId: number): void;
   (e: "toggleStatus", userId: number): void;
-  (e: "updateEditForm", field: keyof EditUserForm, value: string | UserRole): void;
+  (
+    e: "updateEditForm",
+    field: keyof EditUserForm,
+    value: string | RoleValue
+  ): void;
 }>();
 
-const { formatDate, formatRelativeTime, getActivityClass, getDefaultAvatar, getRoleLabel } = useUtils();
-
-const roleOptions: Array<{ value: UserRole; label: string }> = [
-  { value: "admin", label: "Администратор" },
-  { value: "user", label: "Пользователь" },
-  { value: "moderator", label: "Модератор" },
-];
+const {
+  formatDate,
+  formatRelativeTime,
+  getActivityClass,
+  getDefaultAvatar,
+  getRoleLabel,
+} = useUtils();
 
 const props = defineProps<Props>();
 
 const roleLabel = computed(() => getRoleLabel(props.user.role));
 
-function handleEditFormUpdate(field: keyof EditUserForm, value: string | UserRole) {
+function handleEditFormUpdate(
+  field: keyof EditUserForm,
+  value: string | RoleValue
+) {
   emits("updateEditForm", field, value);
 }
 </script>
@@ -48,7 +55,11 @@ function handleEditFormUpdate(field: keyof EditUserForm, value: string | UserRol
     }"
   >
     <td>
-      <input type="checkbox" :checked="isSelected" @change="emits('toggleSelect', user.id)" />
+      <input
+        type="checkbox"
+        :checked="isSelected"
+        @change="emits('toggleSelect', user.id)"
+      />
     </td>
     <td>{{ user.id }}</td>
     <td>
@@ -61,7 +72,11 @@ function handleEditFormUpdate(field: keyof EditUserForm, value: string | UserRol
         />
       </div>
       <div v-else class="user-name-cell">
-        <img :src="user.avatar || getDefaultAvatar(user.name)" :alt="user.name" class="avatar" />
+        <img
+          :src="user.avatar || getDefaultAvatar(user.name)"
+          :alt="user.name"
+          class="avatar"
+        />
         <span>{{ user.name }}</span>
       </div>
     </td>
@@ -81,10 +96,14 @@ function handleEditFormUpdate(field: keyof EditUserForm, value: string | UserRol
         <select
           :value="editForm.role"
           class="edit-select"
-          @change="(e) => handleEditFormUpdate('role', (e.target as HTMLSelectElement).value as UserRole)"
+          @change="(e) => handleEditFormUpdate('role', (e.target as HTMLSelectElement).value as RoleValue)"
         >
-          <option v-for="option in roleOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
+          <option
+            v-for="option in Roles"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.title }}
           </option>
         </select>
       </div>
@@ -96,7 +115,10 @@ function handleEditFormUpdate(field: keyof EditUserForm, value: string | UserRol
     </td>
     <td>
       <span
-        :class="['status-badge', user.status === 'active' ? 'status-active' : 'status-inactive']"
+        :class="[
+          'status-badge',
+          user.status === 'active' ? 'status-active' : 'status-inactive',
+        ]"
         @click="emits('toggleStatus', user.id)"
         :style="{ cursor: 'pointer' }"
       >
@@ -111,13 +133,44 @@ function handleEditFormUpdate(field: keyof EditUserForm, value: string | UserRol
     </td>
     <td>
       <div class="action-buttons">
-        <button v-if="!isEditing" @click="emits('startEdit', user)" class="btn-icon" title="Редактировать">✏️</button>
-        <button v-if="isEditing" @click="emits('saveEdit', user.id)" class="btn-icon btn-success" title="Сохранить">
+        <button
+          v-if="!isEditing"
+          @click="emits('startEdit', user)"
+          class="btn-icon"
+          title="Редактировать"
+        >
+          ✏️
+        </button>
+        <button
+          v-if="isEditing"
+          @click="emits('saveEdit', user.id)"
+          class="btn-icon btn-success"
+          title="Сохранить"
+        >
           ✓
         </button>
-        <button v-if="isEditing" @click="emits('cancelEdit')" class="btn-icon btn-cancel" title="Отмена">✗</button>
-        <button v-if="!isEditing" @click="emits('openDetails', user)" class="btn-icon" title="Подробнее">👁️</button>
-        <button v-if="!isEditing" @click="emits('deleteUser', user.id)" class="btn-icon btn-danger" title="Удалить">
+        <button
+          v-if="isEditing"
+          @click="emits('cancelEdit')"
+          class="btn-icon btn-cancel"
+          title="Отмена"
+        >
+          ✗
+        </button>
+        <button
+          v-if="!isEditing"
+          @click="emits('openDetails', user)"
+          class="btn-icon"
+          title="Подробнее"
+        >
+          👁️
+        </button>
+        <button
+          v-if="!isEditing"
+          @click="emits('deleteUser', user.id)"
+          class="btn-icon btn-danger"
+          title="Удалить"
+        >
           🗑️
         </button>
       </div>

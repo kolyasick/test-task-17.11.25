@@ -37,8 +37,8 @@ export function useFilters() {
 export function useFilteredUsers(
   users: Ref<User[]>,
   searchQuery: Ref<string>,
-  filterRole: Ref<string>,
-  filterStatus: Ref<string>,
+  filterRole: Ref<RoleValue | "">,
+  filterStatus: Ref<StatusValue>,
   dateFrom: Ref<string>,
   dateTo: Ref<string>
 ) {
@@ -53,7 +53,9 @@ export function useFilteredUsers(
     if (!filterStatus.value) {
       return roleFilteredUsers.value;
     }
-    return roleFilteredUsers.value.filter((user) => user.status === filterStatus.value);
+    return roleFilteredUsers.value.filter(
+      (user) => user.status === filterStatus.value
+    );
   });
 
   const dateFilteredUsers = computed(() => {

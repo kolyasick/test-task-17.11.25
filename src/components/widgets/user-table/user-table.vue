@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { watch, onMounted } from "vue";
-import type { UserTableProps, EditUserForm, UserRole } from "@/types/user.ts";
+import type { UserTableProps, EditUserForm } from "@/types/user.ts";
 import Header from "./header.vue";
 import Filters from "./filters.vue";
 import Loader from "@/components/shared/loader.vue";
@@ -10,7 +10,10 @@ import UserTableRow from "./user-table-row.vue";
 import AddUserModal from "./add-user-modal.vue";
 import UserDetailsModal from "./user-details-modal.vue";
 import { useUsers } from "@/composables/users/use-users";
-import { useFilters, useFilteredUsers } from "@/composables/filters/use-filters";
+import {
+  useFilters,
+  useFilteredUsers,
+} from "@/composables/filters/use-filters";
 import { useSorting } from "@/composables/sorting/use-sorting";
 import { usePagination } from "@/composables/pagination/use-pagination";
 import { useSelection } from "@/composables/selection/use-selection";
@@ -18,6 +21,7 @@ import { useModals } from "@/composables/modals/use-modals";
 import { useValidation } from "@/composables/validation/use-validation";
 import { useUtils } from "@/composables/utils/use-utils";
 import UserTableLayout from "./user-table-layout.vue";
+import type { RoleValue } from "@/constants/role/role.constants";
 
 interface Props extends UserTableProps {
   title?: string;
@@ -31,11 +35,38 @@ const props = withDefaults(defineProps<Props>(), {
   apiEndpoint: "/api/users",
 });
 
-const { users, isLoading, isSaving, error, loadUsers, updateUser, deleteUser, deleteUsers, addUser, toggleUserStatus } =
-  useUsers();
-const { searchQuery, filterRole, filterStatus, dateFrom, dateTo, clearAllFilters, clearDateFilter } = useFilters();
-const { filteredAndSearchedUsers } = useFilteredUsers(users, searchQuery, filterRole, filterStatus, dateFrom, dateTo);
-const { sortColumn, sortDirection, sortedUsers, sortBy } = useSorting(filteredAndSearchedUsers);
+const {
+  users,
+  isLoading,
+  isSaving,
+  error,
+  loadUsers,
+  updateUser,
+  deleteUser,
+  deleteUsers,
+  addUser,
+  toggleUserStatus,
+} = useUsers();
+const {
+  searchQuery,
+  filterRole,
+  filterStatus,
+  dateFrom,
+  dateTo,
+  clearAllFilters,
+  clearDateFilter,
+} = useFilters();
+const { filteredAndSearchedUsers } = useFilteredUsers(
+  users,
+  searchQuery,
+  filterRole,
+  filterStatus,
+  dateFrom,
+  dateTo
+);
+const { sortColumn, sortDirection, sortedUsers, sortBy } = useSorting(
+  filteredAndSearchedUsers
+);
 const {
   currentPage,
   pageSize,
@@ -49,8 +80,14 @@ const {
   resetToFirstPage,
 } = usePagination(sortedUsers, props.initialPageSize ?? 25);
 const paginatedUsers = paginatedItems as typeof users;
-const { selectedUsers, isAllSelected, toggleSelectUser, toggleSelectAll, clearSelection, removeFromSelection } =
-  useSelection(paginatedUsers);
+const {
+  selectedUsers,
+  isAllSelected,
+  toggleSelectUser,
+  toggleSelectAll,
+  clearSelection,
+  removeFromSelection,
+} = useSelection(paginatedUsers);
 const {
   showAddUserModal,
   showDetailsModal,
@@ -66,12 +103,16 @@ const {
   startEdit,
   cancelEdit,
 } = useModals();
-const { validateNewUserName, validateNewUserEmail, isNewUserValid } = useValidation(newUser, newUserErrors, users);
+const { validateNewUserName, validateNewUserEmail, isNewUserValid } =
+  useValidation(newUser, newUserErrors, users);
 const { getRoleLabel, formatDate, exportToCSV: exportUsersToCSV } = useUtils();
 
-watch([searchQuery, filterRole, filterStatus, dateFrom, dateTo, pageSize], () => {
-  resetToFirstPage();
-});
+watch(
+  [searchQuery, filterRole, filterStatus, dateFrom, dateTo, pageSize],
+  () => {
+    resetToFirstPage();
+  }
+);
 
 onMounted(async () => {
   await loadUsers();
@@ -102,7 +143,11 @@ async function handleDeleteUser(userId: number) {
 }
 
 async function handleDeleteSelectedUsers() {
-  if (!confirm(`Вы уверены, что хотите удалить ${selectedUsers.value.length} пользователей?`)) {
+  if (
+    !confirm(
+      `Вы уверены, что хотите удалить ${selectedUsers.value.length} пользователей?`
+    )
+  ) {
     return;
   }
 
@@ -137,19 +182,25 @@ async function handleAddNewUser() {
   }
 }
 
-function handleUpdateEditForm(field: keyof EditUserForm, value: string | UserRole) {
+function handleUpdateEditForm(
+  field: keyof EditUserForm,
+  value: string | RoleValue
+) {
   if (field === "name" || field === "email") {
     (editForm as any)[field] = value as string;
   } else if (field === "role") {
-    (editForm as any)[field] = value as UserRole;
+    (editForm as any)[field] = value as RoleValue;
   }
 }
 
-function handleUpdateNewUser(field: keyof EditUserForm | "sendWelcomeEmail", value: string | boolean | UserRole) {
+function handleUpdateNewUser(
+  field: keyof EditUserForm | "sendWelcomeEmail",
+  value: string | boolean | RoleValue
+) {
   if (field === "name" || field === "email") {
     (newUser as any)[field] = value as string;
   } else if (field === "role") {
-    (newUser as any)[field] = value as UserRole;
+    (newUser as any)[field] = value as RoleValue;
   } else if (field === "sendWelcomeEmail") {
     (newUser as any)[field] = value as boolean;
   }
@@ -158,7 +209,9 @@ function handleUpdateNewUser(field: keyof EditUserForm | "sendWelcomeEmail", val
 function handleExportToCSV() {
   const usersToExport =
     selectedUsers.value.length > 0
-      ? users.value.filter((u: { id: number }) => selectedUsers.value.includes(u.id))
+      ? users.value.filter((u: { id: number }) =>
+          selectedUsers.value.includes(u.id)
+        )
       : sortedUsers.value;
 
   exportUsersToCSV(usersToExport, getRoleLabel, formatDate);
@@ -206,21 +259,34 @@ function handleToggleUserStatus(userId: number) {
       <template #header>
         <tr>
           <th>
-            <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" />
+            <input
+              type="checkbox"
+              :checked="isAllSelected"
+              @change="toggleSelectAll"
+            />
           </th>
-          <th @click="sortBy('id')" :class="{ sortable: true, active: sortColumn === 'id' }">
+          <th
+            @click="sortBy('id')"
+            :class="{ sortable: true, active: sortColumn === 'id' }"
+          >
             ID
             <span v-if="sortColumn === 'id'">
               {{ sortDirection === "asc" ? "↑" : "↓" }}
             </span>
           </th>
-          <th @click="sortBy('name')" :class="{ sortable: true, active: sortColumn === 'name' }">
+          <th
+            @click="sortBy('name')"
+            :class="{ sortable: true, active: sortColumn === 'name' }"
+          >
             Имя
             <span v-if="sortColumn === 'name'">
               {{ sortDirection === "asc" ? "↑" : "↓" }}
             </span>
           </th>
-          <th @click="sortBy('email')" :class="{ sortable: true, active: sortColumn === 'email' }">
+          <th
+            @click="sortBy('email')"
+            :class="{ sortable: true, active: sortColumn === 'email' }"
+          >
             Email
             <span v-if="sortColumn === 'email'">
               {{ sortDirection === "asc" ? "↑" : "↓" }}
@@ -266,7 +332,9 @@ function handleToggleUserStatus(userId: number) {
       <template #footer>
         <div v-if="paginatedUsers.length === 0" class="no-data">
           <p>😔 Нет данных для отображения</p>
-          <button @click="clearAllFilters" class="btn btn-primary">Сбросить фильтры</button>
+          <button @click="clearAllFilters" class="btn btn-primary">
+            Сбросить фильтры
+          </button>
         </div>
       </template>
     </UserTableLayout>
@@ -300,7 +368,11 @@ function handleToggleUserStatus(userId: number) {
     />
 
     <!-- Модальное окно деталей пользователя -->
-    <UserDetailsModal :show="showDetailsModal" :user="selectedUser" @close="closeDetailsModal" />
+    <UserDetailsModal
+      :show="showDetailsModal"
+      :user="selectedUser"
+      @close="closeDetailsModal"
+    />
   </div>
 </template>
 

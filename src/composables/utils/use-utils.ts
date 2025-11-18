@@ -1,8 +1,9 @@
-import type { User, UserRole } from "@/types/user";
+import type { RoleValue } from "@/constants/role/role.constants";
+import type { User } from "@/types/user";
 
 export function useUtils() {
-  function getRoleLabel(role: UserRole): string {
-    const labels: Record<UserRole, string> = {
+  function getRoleLabel(role: RoleValue): string {
+    const labels: Record<RoleValue, string> = {
       admin: "Администратор",
       user: "Пользователь",
       moderator: "Модератор",
@@ -68,7 +69,7 @@ export function useUtils() {
 
   function exportToCSV(
     users: ExportUser[],
-    getRoleLabel: (role: UserRole) => string,
+    getRoleLabel: (role: RoleValue) => string,
     formatDate: (date: string) => string
   ) {
     const headers = [

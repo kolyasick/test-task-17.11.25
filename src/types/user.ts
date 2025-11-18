@@ -1,12 +1,13 @@
-export type UserRole = "admin" | "user" | "moderator";
-export type UserStatus = "active" | "inactive";
+import type { StatusValue } from "@/constants/filters/status-filter.constants";
+import type { RoleValue } from "@/constants/role/role.constants";
+
 
 export interface User {
   id: number;
   name: string;
   email: string;
-  role: UserRole;
-  status: UserStatus;
+  role: RoleValue;
+  status: StatusValue;
   registrationDate: string;
   lastActivity: string;
   avatar: string | null;
@@ -18,13 +19,13 @@ export interface User {
 export interface EditUserForm {
   name: string;
   email: string;
-  role: UserRole;
+  role: RoleValue;
 }
 
 export interface NewUserForm {
   name: string;
   email: string;
-  role: UserRole;
+  role: RoleValue;
   sendWelcomeEmail: boolean;
 }
 

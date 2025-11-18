@@ -2,8 +2,8 @@ import { ref, reactive } from "vue";
 import type { User, NewUserForm, NewUserErrors, EditUserForm } from "@/types/user";
 
 export function useModals() {
-  const showAddUserModal = ref(false);
-  const showDetailsModal = ref(false);
+  const showAddUserModal = ref<boolean>(false);
+  const showDetailsModal = ref<boolean>(false);
   const selectedUser = ref<User | null>(null);
   const editingUserId = ref<number | null>(null);
 
