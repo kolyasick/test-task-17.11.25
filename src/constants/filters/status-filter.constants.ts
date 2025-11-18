@@ -1,4 +1,3 @@
-// Точное соответствие значения value для каждого title через маппинг
 
 export const StatusTitleValueMap = {
   Все: "",

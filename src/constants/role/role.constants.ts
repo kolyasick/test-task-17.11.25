@@ -1,4 +1,3 @@
-// Маппинг Русское название роли -> значение value (eng), как в status-filter.constants.ts
 
 export const RoleTitleValueMap = {
   Администратор: "admin",
