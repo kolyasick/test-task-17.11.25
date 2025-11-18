@@ -1,4 +1,4 @@
-import type { UserRole } from "@/types/user";
+import type { User, UserRole } from "@/types/user";
 
 export function useUtils() {
   function getRoleLabel(role: UserRole): string {
@@ -46,7 +46,13 @@ export function useUtils() {
   }
 
   function getDefaultAvatar(name: string): string {
-    const colors: readonly string[] = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8"] as const;
+    const colors: readonly string[] = [
+      "#FF6B6B",
+      "#4ECDC4",
+      "#45B7D1",
+      "#FFA07A",
+      "#98D8C8",
+    ] as const;
     const initial = name.charAt(0).toUpperCase();
     const colorIndex = name.charCodeAt(0) % colors.length;
     const color: string = colors[colorIndex]!;
@@ -55,12 +61,24 @@ export function useUtils() {
     return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='${encodedColor}'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='20' fill='white'%3E${initial}%3C/text%3E%3C/svg%3E`;
   }
 
+  type ExportUser = Omit<
+    User,
+    "avatar" | "loginCount" | "postsCount" | "commentsCount" | "lastActivity"
+  >;
+
   function exportToCSV(
-    users: Array<{ id: number; name: string; email: string; role: UserRole; status: string; registrationDate: string }>,
+    users: ExportUser[],
     getRoleLabel: (role: UserRole) => string,
     formatDate: (date: string) => string
   ) {
-    const headers = ["ID", "Имя", "Email", "Роль", "Статус", "Дата регистрации"];
+    const headers = [
+      "ID",
+      "Имя",
+      "Email",
+      "Роль",
+      "Статус",
+      "Дата регистрации",
+    ];
     const rows = users.map((user) => [
       user.id,
       user.name,
