@@ -5,6 +5,7 @@ import Header from "./header.vue";
 import Filters from "./filters.vue";
 import Loader from "@/components/shared/loader.vue";
 import Error from "@/components/shared/error.vue";
+
 import Pagination from "@/components/shared/pagination.vue";
 import UserTableRow from "./user-table-row.vue";
 import AddUserModal from "./add-user-modal.vue";
@@ -35,95 +36,51 @@ const props = withDefaults(defineProps<Props>(), {
   apiEndpoint: "/api/users",
 });
 
-const {
-  users,
-  isLoading,
-  isSaving,
-  error,
-  loadUsers,
-  updateUser,
-  deleteUser,
-  deleteUsers,
-  addUser,
-  toggleUserStatus,
-} = useUsers();
-const {
-  searchQuery,
-  filterRole,
-  filterStatus,
-  dateFrom,
-  dateTo,
-  clearAllFilters,
-  clearDateFilter,
-} = useFilters();
+const user = useUsers();
+const filter = useFilters();
 const { filteredAndSearchedUsers } = useFilteredUsers(
-  users,
-  searchQuery,
-  filterRole,
-  filterStatus,
-  dateFrom,
-  dateTo
+  user.users,
+  filter.searchQuery,
+  filter.filterRole,
+  filter.filterStatus,
+  filter.dateFrom,
+  filter.dateTo
 );
-const { sortColumn, sortDirection, sortedUsers, sortBy } = useSorting(
-  filteredAndSearchedUsers
+const sort = useSorting(filteredAndSearchedUsers);
+const pagination = usePagination(sort.sortedUsers, props.initialPageSize ?? 25);
+const paginatedUsers = pagination.paginatedItems as typeof user.users;
+const selection = useSelection(paginatedUsers);
+const modals = useModals();
+const validation = useValidation(
+  modals.newUser,
+  modals.newUserErrors,
+  user.users
 );
-const {
-  currentPage,
-  pageSize,
-  totalPages,
-  paginationStart,
-  paginationEnd,
-  paginatedItems,
-  visiblePages,
-  goToPage,
-  handlePageSizeChange,
-  resetToFirstPage,
-} = usePagination(sortedUsers, props.initialPageSize ?? 25);
-const paginatedUsers = paginatedItems as typeof users;
-const {
-  selectedUsers,
-  isAllSelected,
-  toggleSelectUser,
-  toggleSelectAll,
-  clearSelection,
-  removeFromSelection,
-} = useSelection(paginatedUsers);
-const {
-  showAddUserModal,
-  showDetailsModal,
-  selectedUser,
-  editingUserId,
-  newUser,
-  newUserErrors,
-  editForm,
-  openAddUserModal,
-  closeAddUserModal,
-  openUserDetails,
-  closeDetailsModal,
-  startEdit,
-  cancelEdit,
-} = useModals();
-const { validateNewUserName, validateNewUserEmail, isNewUserValid } =
-  useValidation(newUser, newUserErrors, users);
 const { getRoleLabel, formatDate, exportToCSV: exportUsersToCSV } = useUtils();
 
 watch(
-  [searchQuery, filterRole, filterStatus, dateFrom, dateTo, pageSize],
+  [
+    filter.dateFrom,
+    filter.dateFrom,
+    filter.searchQuery,
+    filter.filterRole,
+    filter.filterStatus,
+  ],
   () => {
-    resetToFirstPage();
+    pagination.resetToFirstPage();
   }
 );
 
 onMounted(async () => {
-  await loadUsers();
+  await user.loadUsers();
 });
 
 async function handleSaveEdit(userId: number) {
   try {
-    await updateUser(userId, editForm);
-    cancelEdit();
+    await user.updateUser(userId, modals.editForm);
+    modals.cancelEdit();
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorMessage = err instanceof TypeError ? err.message : String(err);
     alert("Ошибка сохранения: " + errorMessage);
   }
 }
@@ -134,10 +91,10 @@ async function handleDeleteUser(userId: number) {
   }
 
   try {
-    await deleteUser(userId);
-    removeFromSelection(userId);
+    await user.deleteUser(userId);
+    selection.removeFromSelection(userId);
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorMessage = err instanceof TypeError ? err.message : String(err);
     alert("Ошибка удаления: " + errorMessage);
   }
 }
@@ -145,39 +102,39 @@ async function handleDeleteUser(userId: number) {
 async function handleDeleteSelectedUsers() {
   if (
     !confirm(
-      `Вы уверены, что хотите удалить ${selectedUsers.value.length} пользователей?`
+      `Вы уверены, что хотите удалить ${selection.selectedUsers.value.length} пользователей?`
     )
   ) {
     return;
   }
 
   try {
-    await deleteUsers(selectedUsers.value);
-    clearSelection();
+    await user.deleteUsers(selection.selectedUsers.value);
+    selection.clearSelection();
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorMessage = err instanceof TypeError ? err.message : String(err);
     alert("Ошибка удаления: " + errorMessage);
   }
 }
 
 async function handleAddNewUser() {
-  validateNewUserName();
-  validateNewUserEmail();
+  validation.validateNewUserName();
+  validation.validateNewUserEmail();
 
-  if (!isNewUserValid.value) {
+  if (!validation.isNewUserValid.value) {
     return;
   }
 
   try {
-    await addUser({
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
+    await user.addUser({
+      name: modals.newUser.name,
+      email: modals.newUser.email,
+      role: modals.newUser.role,
       status: "active",
     });
-    closeAddUserModal();
+    modals.closeAddUserModal();
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorMessage = err instanceof TypeError ? err.message : String(err);
     alert("Ошибка создания пользователя: " + errorMessage);
   }
 }
@@ -187,9 +144,9 @@ function handleUpdateEditForm(
   value: string | RoleValue
 ) {
   if (field === "name" || field === "email") {
-    (editForm as any)[field] = value as string;
+    (modals.editForm as any)[field] = value as string;
   } else if (field === "role") {
-    (editForm as any)[field] = value as RoleValue;
+    (modals.editForm as any)[field] = value as RoleValue;
   }
 }
 
@@ -198,27 +155,27 @@ function handleUpdateNewUser(
   value: string | boolean | RoleValue
 ) {
   if (field === "name" || field === "email") {
-    (newUser as any)[field] = value as string;
+    (modals.newUser as any)[field] = value as string;
   } else if (field === "role") {
-    (newUser as any)[field] = value as RoleValue;
+    (modals.newUser as any)[field] = value as RoleValue;
   } else if (field === "sendWelcomeEmail") {
-    (newUser as any)[field] = value as boolean;
+    (modals.newUser as any)[field] = value as boolean;
   }
 }
 
 function handleExportToCSV() {
   const usersToExport =
-    selectedUsers.value.length > 0
-      ? users.value.filter((u: { id: number }) =>
-          selectedUsers.value.includes(u.id)
+    selection.selectedUsers.value.length > 0
+      ? user.users.value.filter((u: { id: number }) =>
+          selection.selectedUsers.value.includes(u.id)
         )
-      : sortedUsers.value;
+      : sort.sortedUsers.value;
 
   exportUsersToCSV(usersToExport, getRoleLabel, formatDate);
 }
 
 function handleToggleUserStatus(userId: number) {
-  toggleUserStatus(userId);
+  user.toggleUserStatus(userId);
 }
 </script>
 
@@ -228,82 +185,92 @@ function handleToggleUserStatus(userId: number) {
     <Header
       :title="title"
       :users-length="filteredAndSearchedUsers.length"
-      :selected-users="selectedUsers.length"
-      :is-loading="isLoading"
+      :selected-users="selection.selectedUsers.value.length"
+      :is-loading="user.isLoading.value"
       :show-all-users="false"
-      v-model:searchQuery="searchQuery"
-      v-model:filterRole="filterRole"
+      v-model:searchQuery="filter.searchQuery.value"
+      v-model:filterRole="filter.filterRole.value"
       @handle-search="() => {}"
-      @open-add-user-modal="openAddUserModal"
+      @open-add-user-modal="modals.openAddUserModal"
       @exportToCSV="handleExportToCSV"
       @delete-selected-users="handleDeleteSelectedUsers"
     />
 
     <!-- Фильтры -->
     <Filters
-      v-model:filter-status="filterStatus"
-      v-model:data-to="dateTo"
-      v-model:date-from="dateFrom"
-      @clear-date-filter="clearDateFilter"
+      v-model:filter-status="filter.filterStatus.value"
+      v-model:data-to="filter.dateTo.value"
+      v-model:date-from="filter.dateFrom.value"
+      @clear-date-filter="filter.clearDateFilter"
     />
 
     <!-- Загрузка -->
-    <Loader v-if="isLoading" title="Загрузка данных..." />
+    <Loader v-if="user.isLoading.value" title="Загрузка данных..." />
 
     <!-- Ошибка -->
-    <Error v-if="error" :error="error" @retry-load="loadUsers" />
+    <Error
+      v-if="user.error.value"
+      :error="user.error.value"
+      @retry-load="user.loadUsers"
+    />
 
     <!-- Таблица -->
 
-    <UserTableLayout v-if="!isLoading && !error">
+    <UserTableLayout v-if="!user.isLoading.value && !user.error.value">
       <template #header>
         <tr>
           <th>
             <input
               type="checkbox"
-              :checked="isAllSelected"
-              @change="toggleSelectAll"
+              :checked="selection.isAllSelected.value"
+              @change="selection.toggleSelectAll"
             />
           </th>
           <th
-            @click="sortBy('id')"
-            :class="{ sortable: true, active: sortColumn === 'id' }"
+            @click="sort.sortBy('id')"
+            :class="{ sortable: true, active: sort.sortColumn.value === 'id' }"
           >
             ID
-            <span v-if="sortColumn === 'id'">
-              {{ sortDirection === "asc" ? "↑" : "↓" }}
+            <span v-if="sort.sortColumn.value === 'id'">
+              {{ sort.sortDirection.value === "asc" ? "↑" : "↓" }}
             </span>
           </th>
           <th
-            @click="sortBy('name')"
-            :class="{ sortable: true, active: sortColumn === 'name' }"
+            @click="sort.sortBy('name')"
+            :class="{
+              sortable: true,
+              active: sort.sortColumn.value === 'name',
+            }"
           >
             Имя
-            <span v-if="sortColumn === 'name'">
-              {{ sortDirection === "asc" ? "↑" : "↓" }}
+            <span v-if="sort.sortColumn.value === 'name'">
+              {{ sort.sortDirection.value === "asc" ? "↑" : "↓" }}
             </span>
           </th>
           <th
-            @click="sortBy('email')"
-            :class="{ sortable: true, active: sortColumn === 'email' }"
+            @click="sort.sortBy('email')"
+            :class="{
+              sortable: true,
+              active: sort.sortColumn.value === 'email',
+            }"
           >
             Email
-            <span v-if="sortColumn === 'email'">
-              {{ sortDirection === "asc" ? "↑" : "↓" }}
+            <span v-if="sort.sortColumn.value === 'email'">
+              {{ sort.sortDirection.value === "asc" ? "↑" : "↓" }}
             </span>
           </th>
           <th>Роль</th>
           <th>Статус</th>
           <th
-            @click="sortBy('registrationDate')"
+            @click="sort.sortBy('registrationDate')"
             :class="{
               sortable: true,
-              active: sortColumn === 'registrationDate',
+              active: sort.sortColumn.value === 'registrationDate',
             }"
           >
             Дата регистрации
-            <span v-if="sortColumn === 'registrationDate'">
-              {{ sortDirection === "asc" ? "↑" : "↓" }}
+            <span v-if="sort.sortColumn.value === 'registrationDate'">
+              {{ sort.sortDirection.value === "asc" ? "↑" : "↓" }}
             </span>
           </th>
           <th>Последняя активность</th>
@@ -315,14 +282,14 @@ function handleToggleUserStatus(userId: number) {
           v-for="user in paginatedUsers"
           :key="user.id"
           :user="user"
-          :is-selected="selectedUsers.includes(user.id)"
-          :is-editing="editingUserId === user.id"
-          :edit-form="editForm"
-          @toggle-select="toggleSelectUser"
-          @start-edit="startEdit"
+          :is-selected="selection.selectedUsers.value.includes(user.id)"
+          :is-editing="modals.editingUserId.value === user.id"
+          :edit-form="modals.editForm"
+          @toggle-select="selection.toggleSelectUser"
+          @start-edit="modals.startEdit"
           @save-edit="handleSaveEdit"
-          @cancel-edit="cancelEdit"
-          @open-details="openUserDetails"
+          @cancel-edit="modals.cancelEdit"
+          @open-details="modals.openUserDetails"
           @delete-user="handleDeleteUser"
           @toggle-status="handleToggleUserStatus"
           @update-edit-form="handleUpdateEditForm"
@@ -332,7 +299,7 @@ function handleToggleUserStatus(userId: number) {
       <template #footer>
         <div v-if="paginatedUsers.length === 0" class="no-data">
           <p>😔 Нет данных для отображения</p>
-          <button @click="clearAllFilters" class="btn btn-primary">
+          <button @click="filter.clearAllFilters" class="btn btn-primary">
             Сбросить фильтры
           </button>
         </div>
@@ -341,37 +308,37 @@ function handleToggleUserStatus(userId: number) {
 
     <!-- Пагинация -->
     <Pagination
-      :is-loading="isLoading"
-      :start="paginationStart"
-      :end="paginationEnd"
-      :current-page="currentPage"
+      :is-loading="user.isLoading.value"
+      :start="pagination.paginationStart.value"
+      :end="pagination.paginationEnd.value"
+      :current-page="pagination.currentPage.value"
       :entities-length="filteredAndSearchedUsers.length"
-      :visible-pages="visiblePages"
-      :total-pages="totalPages"
-      v-model:page-size="pageSize"
-      @go-to-page="goToPage"
-      @handle-page-size-change="handlePageSizeChange"
+      :visible-pages="pagination.visiblePages.value"
+      :total-pages="pagination.totalPages.value"
+      v-model:page-size="pagination.pageSize"
+      @go-to-page="pagination.goToPage"
+      @handle-page-size-change="pagination.handlePageSizeChange"
     />
 
     <!-- Модальное окно добавления пользователя -->
     <AddUserModal
-      :show="showAddUserModal"
-      :new-user="newUser"
-      :new-user-errors="newUserErrors"
-      :is-saving="isSaving"
-      :is-valid="isNewUserValid"
-      @close="closeAddUserModal"
+      :show="modals.showAddUserModal.value"
+      :new-user="modals.newUser"
+      :new-user-errors="modals.newUserErrors"
+      :is-saving="user.isSaving.value"
+      :is-valid="validation.isNewUserValid.value"
+      @close="modals.closeAddUserModal"
       @update:newUser="handleUpdateNewUser"
-      @validate-name="validateNewUserName"
-      @validate-email="validateNewUserEmail"
+      @validate-name="validation.validateNewUserName"
+      @validate-email="validation.validateNewUserEmail"
       @submit="handleAddNewUser"
     />
 
     <!-- Модальное окно деталей пользователя -->
     <UserDetailsModal
-      :show="showDetailsModal"
-      :user="selectedUser"
-      @close="closeDetailsModal"
+      :show="modals.showDetailsModal.value"
+      :user="modals.selectedUser.value"
+      @close="modals.closeDetailsModal"
     />
   </div>
 </template>
