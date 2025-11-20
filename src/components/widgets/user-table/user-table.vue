@@ -1,34 +1,30 @@
 <script setup lang="ts">
-import { watch, onMounted } from "vue";
-import type { UserTableProps, EditUserForm } from "@/types/user.ts";
-import Header from "./header.vue";
-import Filters from "./filters.vue";
-import Loader from "@/components/shared/loader.vue";
-import Error from "@/components/shared/error.vue";
-
-import Pagination from "@/components/shared/pagination.vue";
-import UserTableRow from "./user-table-row.vue";
-import AddUserModal from "./add-user-modal.vue";
-import UserDetailsModal from "./user-details-modal.vue";
+import { watch, onMounted, computed } from "vue";
 import { useUsers } from "@/composables/users/use-users";
-import {
-  useFilters,
-  useFilteredUsers,
-} from "@/composables/filters/use-filters";
+import { useFilters } from "@/composables/filters/use-filters";
 import { useSorting } from "@/composables/sorting/use-sorting";
 import { usePagination } from "@/composables/pagination/use-pagination";
 import { useSelection } from "@/composables/selection/use-selection";
 import { useModals } from "@/composables/modals/use-modals";
 import { useValidation } from "@/composables/validation/use-validation";
 import { useUtils } from "@/composables/utils/use-utils";
-import UserTableLayout from "./user-table-layout.vue";
+import type { EditUserForm } from "@/types/user.ts";
 import type { RoleValue } from "@/constants/role/role.constants";
+import UserTableLayout from "./user-table-layout.vue";
+import Header from "./header.vue";
+import Filters from "./filters.vue";
+import Loader from "@/components/shared/loader.vue";
+import Error from "@/components/shared/error.vue";
+import Pagination from "@/components/shared/pagination.vue";
+import UserTableRow from "./user-table-row.vue";
+import AddUserModal from "./add-user-modal.vue";
+import UserDetailsModal from "./user-details-modal.vue";
 
-interface Props extends UserTableProps {
+type Props = {
   title?: string;
   initialPageSize?: number;
   apiEndpoint?: string;
-}
+};
 
 const props = withDefaults(defineProps<Props>(), {
   title: "Управление пользователями",
@@ -38,14 +34,63 @@ const props = withDefaults(defineProps<Props>(), {
 
 const user = useUsers();
 const filter = useFilters();
-const { filteredAndSearchedUsers } = useFilteredUsers(
-  user.users,
-  filter.searchQuery,
-  filter.filterRole,
-  filter.filterStatus,
-  filter.dateFrom,
-  filter.dateTo
-);
+
+const roleFilteredUsers = computed(() => {
+  if (!filter.filterRole.value) {
+    return user.users.value;
+  }
+  return user.users.value.filter(
+    (user) => user.role === filter.filterRole.value
+  );
+});
+
+const statusFilteredUsers = computed(() => {
+  if (!filter.filterStatus.value) {
+    return roleFilteredUsers.value;
+  }
+  return roleFilteredUsers.value.filter(
+    (user) => user.status === filter.filterStatus.value
+  );
+});
+
+const dateFilteredUsers = computed(() => {
+  let filtered = statusFilteredUsers.value;
+
+  if (filter.dateFrom.value) {
+    const fromDate = new Date(filter.dateFrom.value);
+    filtered = filtered.filter((user) => {
+      const userDate = new Date(user.registrationDate);
+      return userDate >= fromDate;
+    });
+  }
+
+  if (filter.dateTo.value) {
+    const toDate = new Date(filter.dateTo.value);
+    toDate.setHours(23, 59, 59, 999);
+    filtered = filtered.filter((user) => {
+      const userDate = new Date(user.registrationDate);
+      return userDate <= toDate;
+    });
+  }
+
+  return filtered;
+});
+
+const filteredAndSearchedUsers = computed(() => {
+  if (!filter.searchQuery.value.trim()) {
+    return dateFilteredUsers.value;
+  }
+
+  const query = filter.searchQuery.value.toLowerCase().trim();
+  return dateFilteredUsers.value.filter((user) => {
+    return (
+      user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) ||
+      user.id.toString().includes(query)
+    );
+  });
+});
+
 const sort = useSorting(filteredAndSearchedUsers);
 const pagination = usePagination(sort.sortedUsers, props.initialPageSize ?? 25);
 const paginatedUsers = pagination.paginatedItems as typeof user.users;

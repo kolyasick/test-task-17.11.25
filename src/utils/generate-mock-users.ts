@@ -34,13 +34,10 @@ export function generateMockUsers(count: number): User[] {
       id: i,
       name: name,
       email: `user${i}@example.com`,
-      role: roles[Math.floor(Math.random() * roles.length)] as
-        | "admin"
-        | "user"
-        | "moderator",
-      status: statuses[Math.floor(Math.random() * statuses.length)] as
-        | "active"
-        | "inactive",
+      role: roles[Math.floor(Math.random() * roles.length)] as RoleValue,
+      status: statuses[
+        Math.floor(Math.random() * statuses.length)
+      ] as StatusValue,
       registrationDate: registrationDate.toISOString(),
       lastActivity: lastActivity.toISOString(),
       avatar: null,

@@ -34,9 +34,4 @@ export interface NewUserErrors {
   email: string;
 }
 
-export interface UserTableProps {
-  title?: string;
-  initialPageSize?: number;
-  apiEndpoint?: string;
-}
 

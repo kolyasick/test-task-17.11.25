@@ -16,7 +16,9 @@ export function useUsers() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       users.value = generateMockUsers(100) as User[];
     } catch (err) {
-      error.value = "Ошибка загрузки данных: " + (err instanceof Error ? err.message : String(err));
+      error.value =
+        "Ошибка загрузки данных: " +
+        (err instanceof Error ? err.message : String(err));
     } finally {
       isLoading.value = false;
     }
@@ -36,7 +38,10 @@ export function useUsers() {
         } as User;
       }
     } catch (err) {
-      throw new Error("Ошибка сохранения: " + (err instanceof Error ? err.message : String(err)));
+      throw new Error(
+        "Ошибка сохранения: " +
+          (err instanceof Error ? err.message : String(err))
+      );
     } finally {
       isSaving.value = false;
     }
@@ -51,7 +56,9 @@ export function useUsers() {
         users.value.splice(index, 1);
       }
     } catch (err) {
-      throw new Error("Ошибка удаления: " + (err instanceof Error ? err.message : String(err)));
+      throw new Error(
+        "Ошибка удаления: " + (err instanceof Error ? err.message : String(err))
+      );
     }
   }
 
@@ -59,16 +66,26 @@ export function useUsers() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      users.value = users.value.filter((user: User) => !userIds.includes(user.id));
+      users.value = users.value.filter(
+        (user: User) => !userIds.includes(user.id)
+      );
     } catch (err) {
-      throw new Error("Ошибка удаления: " + (err instanceof Error ? err.message : String(err)));
+      throw new Error(
+        "Ошибка удаления: " + (err instanceof Error ? err.message : String(err))
+      );
     }
   }
 
   async function addUser(
     userData: Omit<
       User,
-      "id" | "registrationDate" | "lastActivity" | "avatar" | "loginCount" | "postsCount" | "commentsCount"
+      | "id"
+      | "registrationDate"
+      | "lastActivity"
+      | "avatar"
+      | "loginCount"
+      | "postsCount"
+      | "commentsCount"
     >
   ) {
     isSaving.value = true;
@@ -77,7 +94,10 @@ export function useUsers() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const newUser: User = {
-        id: users.value.length > 0 ? Math.max(...users.value.map((u: User) => u.id)) + 1 : 1,
+        id:
+          users.value.length > 0
+            ? Math.max(...users.value.map((u: User) => u.id)) + 1
+            : 1,
         ...userData,
         status: "active",
         registrationDate: new Date().toISOString(),
@@ -91,7 +111,10 @@ export function useUsers() {
       users.value.unshift(newUser);
       return newUser;
     } catch (err) {
-      throw new Error("Ошибка создания пользователя: " + (err instanceof Error ? err.message : String(err)));
+      throw new Error(
+        "Ошибка создания пользователя: " +
+          (err instanceof Error ? err.message : String(err))
+      );
     } finally {
       isSaving.value = false;
     }
